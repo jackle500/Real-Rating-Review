@@ -1,29 +1,72 @@
+<!-- templates/index.html -->
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Product Review Rating</title>
-    <!-- Bootstrap CSS for styling -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sentiment Analysis with VADER</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+    <style>
+      .star-rating {
+        font-size: 24px;
+        color: gold;
+      }
+    </style>
+  </head>
+  <body>
     <div class="container mt-5">
-        <h1 class="mb-4">Product Review Rating</h1>
-        <form method="POST">
-            <div class="mb-3">
-                <label for="review" class="form-label">Enter your product review:</label>
-                <textarea class="form-control" id="review" name="review" rows="4" required>{{ review if review }}</textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Get Rating</button>
-        </form>
-
-        {% if rating is not none %}
-            <div class="result mt-4">
-                <h2>Rating:</h2>
-                <p><strong>{{ rating }}</strong> out of 5</p>
-            </div>
-        {% endif %}
+      <h1 class="text-center">Sentiment Analysis with VADER</h1>
+      <form id="reviewForm" class="mt-4">
+        <div class="form-group">
+          <textarea
+            name="review"
+            class="form-control"
+            rows="4"
+            placeholder="Paste your review here..."
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Analyze Sentiment</button>
+      </form>
+      <h2 id="result" class="mt-4"></h2>
+      <div id="starRating" class="star-rating mt-2"></div>
     </div>
-    <!-- Bootstrap JS (Optional for interactive components) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+
+    <script>
+      document.getElementById("reviewForm").onsubmit = async function (event) {
+        event.preventDefault(); // Prevent form submission
+        const formData = new FormData(this);
+        const response = await fetch("/analyze", {
+          method: "POST",
+          body: formData,
+        });
+        const result = await response.json();
+        const score = (result.score.compound + 1) * 2.5; // Scale score to 0.0 - 5.0
+        document.getElementById("result").innerText = `Sentiment: ${
+          result.sentiment
+        } \n ${score.toFixed(2)}`;
+        document.getElementById("starRating").innerHTML = getStarRating(score);
+      };
+
+      function getStarRating(score) {
+        let stars = "";
+        for (let i = 0; i < 5; i++) {
+          if (score >= (i + 1) * 1) {
+            stars += '<i class="fas fa-star"></i>'; // Full star
+          } else if (score >= i + 0.5) {
+            stars += '<i class="fas fa-star-half-alt"></i>'; // Half star
+          } else {
+            stars += '<i class="far fa-star"></i>'; // Empty star
+          }
+        }
+        return stars;
+      }
+    </script>
+  </body>
 </html>
