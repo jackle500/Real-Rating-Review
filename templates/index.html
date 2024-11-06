@@ -34,6 +34,7 @@
         </div>
         <button type="submit" class="btn btn-primary">Analyze Sentiment</button>
       </form>
+      <p id="summarize" class="mt-4"></p>
       <h2 id="result" class="mt-4"></h2>
       <div id="starRating" class="star-rating mt-2"></div>
     </div>
@@ -48,10 +49,16 @@
         });
         const result = await response.json();
         const score = (result.score.compound + 1) * 2.5; // Scale score to 0.0 - 5.0
+        // Get sentiment
         document.getElementById("result").innerText = `Sentiment: ${
           result.sentiment
         } \n ${score.toFixed(2)}`;
+        // Calculate star rating
         document.getElementById("starRating").innerHTML = getStarRating(score);
+        // Get Summarization
+        document.getElementById(
+          "summarize"
+        ).innerHTML = `Summarize: ${result.summarize}`;
       };
 
       function getStarRating(score) {
