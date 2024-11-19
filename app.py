@@ -1,10 +1,16 @@
+import nltk 
+
 # import flask app
 from flask import Flask, request, jsonify, render_template
 # import sentiment from VADER
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import nltk
+
 # import text summarizer 
-from summarization import summarize_text
+from summarization import summarize_and_paraphrase
+# import keypoints extraction
+from summarization import analyze_sentiment_points
+
+
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -22,7 +28,8 @@ def home():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     review_text = request.form['review']  # Get the review from the form
-    summarize = summarize_text(review_text)
+    summarize = summarize_and_paraphrase(review_text)  # Summarize the review
+    key = analyze_sentiment_points(review_text)  # Extract key points
     score = analyzer.polarity_scores(review_text)  # Analyze sentiment
     sentiment = 'Neutral'  # Default sentiment
    
@@ -35,9 +42,11 @@ def analyze():
         'review': review_text,
         'sentiment': sentiment,
         'score': score,
-        'summarize':summarize
+        'summarize': summarize,
+        'key': key   # Return the summary
     })
 
 if __name__ == '__main__':
     app.run(debug=True,port=8080)
 
+    
