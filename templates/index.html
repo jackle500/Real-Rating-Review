@@ -13,16 +13,22 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
     />
+    <link rel="stylesheet" href="style.css" />
     <style>
       .star-rating {
         font-size: 24px;
         color: gold;
       }
+      #summary-container,
+      #positive-container,
+      #negative-container {
+        display: none; /* Hidden by default */
+      }
     </style>
   </head>
   <body>
     <div class="container mt-5">
-      <h1 class="text-center">Sentiment Analysis with VADER</h1>
+      <h1 class="text-center">Real Rating Review</h1>
       <form id="reviewForm" class="mt-4">
         <div class="form-group">
           <textarea
@@ -34,31 +40,90 @@
         </div>
         <button type="submit" class="btn btn-primary">Analyze Sentiment</button>
       </form>
-      <p id="summarize" class="mt-4"></p>
-      <h2 id="result" class="mt-4"></h2>
-      <div id="starRating" class="star-rating mt-2"></div>
+
+      <div id="summary-container" class="mt-4">
+        <p id="summarize"></p>
+        <h2 id="result"></h2>
+        <div id="starRating" class="star-rating mt-2"></div>
+      </div>
+
+      <div class="row mt-4">
+        <div id="positive-container" class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title text-success">Positive Points</h5>
+              <ul id="positive-points" class="list-group list-group-flush"></ul>
+            </div>
+          </div>
+        </div>
+        <div id="negative-container" class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title text-danger">Negative Points</h5>
+              <ul id="negative-points" class="list-group list-group-flush"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
       document.getElementById("reviewForm").onsubmit = async function (event) {
-        event.preventDefault(); // Prevent form submission
+        event.preventDefault();
         const formData = new FormData(this);
         const response = await fetch("/analyze", {
           method: "POST",
           body: formData,
         });
         const result = await response.json();
-        const score = (result.score.compound + 1) * 2.5; // Scale score to 0.0 - 5.0
-        // Get sentiment
+        const score = (result.score.compound + 1) * 2.5;
+
+        // Show summary container
+        const summaryContainer = document.getElementById("summary-container");
+        summaryContainer.style.display = "block";
+
+        // Display summary, sentiment and stars
         document.getElementById("result").innerText = `Sentiment: ${
           result.sentiment
         } \n ${score.toFixed(2)}`;
-        // Calculate star rating
         document.getElementById("starRating").innerHTML = getStarRating(score);
-        // Get Summarization
         document.getElementById(
           "summarize"
-        ).innerHTML = `Summarize: ${result.summarize}`;
+        ).innerHTML = `Summary: ${result.summarize}`;
+
+        // Handle positive points
+        const positiveContainer = document.getElementById("positive-container");
+        const positiveList = document.getElementById("positive-points");
+        positiveList.innerHTML = "";
+
+        if (result.key.positive && result.key.positive.length > 0) {
+          result.key.positive.forEach((point) => {
+            const li = document.createElement("li");
+            li.className = "list-group-item";
+            li.innerHTML = `<i class="fas fa-check-circle text-success mr-2"></i>${point}`;
+            positiveList.appendChild(li);
+          });
+          positiveContainer.style.display = "block";
+        } else {
+          positiveContainer.style.display = "none";
+        }
+
+        // Handle negative points
+        const negativeContainer = document.getElementById("negative-container");
+        const negativeList = document.getElementById("negative-points");
+        negativeList.innerHTML = "";
+
+        if (result.key.negative && result.key.negative.length > 0) {
+          result.key.negative.forEach((point) => {
+            const li = document.createElement("li");
+            li.className = "list-group-item";
+            li.innerHTML = `<i class="fas fa-times-circle text-danger mr-2"></i>${point}`;
+            negativeList.appendChild(li);
+          });
+          negativeContainer.style.display = "block";
+        } else {
+          negativeContainer.style.display = "none";
+        }
       };
 
       function getStarRating(score) {
