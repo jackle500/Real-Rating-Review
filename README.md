@@ -73,13 +73,13 @@ python app.py
 
 Open your web browser and go to http://localhost:8080.
 
-# Paste any review into the input field and click analyze
+### Paste any review into the input field and click analyze
 
 # The front-end will give you: 
 
-   # A Summarize of the review, generates a coherent summary that captures the main points
+   ### A Summarize of the review, generates a coherent summary that captures the main points
 
-   # A sentiment score from 0 to 5, and stars that reflect the score
+   ### A sentiment score from 0 to 5, and stars that reflect the score
       Score range is indeed 0-5 where:
       0-1: Very negative
       1-2: Negative
@@ -93,7 +93,7 @@ Open your web browser and go to http://localhost:8080.
       ★★★☆☆ (3 stars) = score 2.5-3.4
       etc.
 
-   # Key Points Extraction:
+   ### Key Points Extraction:
       Each sentence gets its own sentiment score (1-5)
       Positive points: Sentences with scores ≥ 4
       Negative points: Sentences with scores ≤ 2
