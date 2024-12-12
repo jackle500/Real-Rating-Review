@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sentiment Analysis with VADER</title>
+    <title>Sentiment Analysis</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
@@ -13,51 +13,81 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
     />
-    <link rel="stylesheet" href="style.css" />
-    <style>
-      .star-rating {
-        font-size: 24px;
-        color: gold;
-      }
-      #summary-container,
-      #positive-container,
-      #negative-container {
-        display: none; /* Hidden by default */
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
+    <header>
+      <h1>Real-Rating-Review</h1>
+      <p class="lead">Analyze your product reviews with AI</p>
+    </header>
     <div class="container mt-5">
-      <h1 class="text-center">Real Rating Review</h1>
-      <form id="reviewForm" class="mt-4">
+      <form id="reviewForm" class="mt-4 shadow-sm" method="post">
         <div class="form-group">
           <textarea
             name="review"
             class="form-control"
-            rows="4"
+            rows="6"
             placeholder="Paste your review here..."
           ></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Analyze Sentiment</button>
+        <button type="submit" class="btn btn-primary button-submit">
+          Analyze Review
+        </button>
       </form>
 
-      <div id="summary-container" class="mt-4">
-        <p id="summarize"></p>
-        <h2 id="result"></h2>
-        <div id="starRating" class="star-rating mt-2"></div>
+      <div class="row mt-4">
+        <!-- Summary Card -->
+        <div class="col-md-8">
+          <div id="summary-container" class="card shadow" style="display: none">
+            <div class="card-body">
+              <h5 class="card-title">Review Summary</h5>
+              <p id="summarize" class="card-text"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sentiment Score Card -->
+        <div class="col-md-4 d-flex justify-content-center">
+          <div
+            id="sentiment-container"
+            class="card shadow w-100"
+            style="display: none"
+          >
+            <div
+              class="card-body text-center d-flex flex-column align-items-center"
+            >
+              <h5 class="card-title">Sentiment Analysis</h5>
+              <h2 id="result" class="sentiment-result"></h2>
+              <div id="starRating" class="star-rating mt-2"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
+      <!-- Positive/Negative points row -->
       <div class="row mt-4">
-        <div id="positive-container" class="col-md-6">
-          <div class="card">
+        <div id="positive-container" class="col-md-6" style="display: none">
+          <div class="card h-100">
             <div class="card-body">
               <h5 class="card-title text-success">Positive Points</h5>
               <ul id="positive-points" class="list-group list-group-flush"></ul>
             </div>
           </div>
         </div>
-        <div id="negative-container" class="col-md-6">
-          <div class="card">
+
+        <div id="negative-container" class="col-md-6" style="display: none">
+          <div class="card h-100">
             <div class="card-body">
               <h5 class="card-title text-danger">Negative Points</h5>
               <ul id="negative-points" class="list-group list-group-flush"></ul>
@@ -65,80 +95,38 @@
           </div>
         </div>
       </div>
+
+      {% if summary %}
+      <div class="result">
+        <h2>Summarized and Paraphrased Text</h2>
+        <p>{{ summarize }}</p>
+      </div>
+      {% endif %} {% if key %}
+      <div class="row mt-4">
+        <div class="card col-md-6">
+          <div class="card-body">
+            <h5 class="card-title text-success">Positive Points</h5>
+            <ul class="list-group">
+              {% for point in key['positive'] %}
+              <li class="list-group-item">{{ point }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <div class="card col-md-6">
+          <div class="card-body">
+            <h5 class="card-title text-danger">Negative Points</h5>
+            <ul class="list-group">
+              {% for point in key['negative'] %}
+              <li class="list-group-item">{{ point }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
-    <script>
-      document.getElementById("reviewForm").onsubmit = async function (event) {
-        event.preventDefault();
-        const formData = new FormData(this);
-        const response = await fetch("/analyze", {
-          method: "POST",
-          body: formData,
-        });
-        const result = await response.json();
-        const score = (result.score.compound + 1) * 2.5;
-
-        // Show summary container
-        const summaryContainer = document.getElementById("summary-container");
-        summaryContainer.style.display = "block";
-
-        // Display summary, sentiment and stars
-        document.getElementById("result").innerText = `Sentiment: ${
-          result.sentiment
-        } \n ${score.toFixed(2)}`;
-        document.getElementById("starRating").innerHTML = getStarRating(score);
-        document.getElementById(
-          "summarize"
-        ).innerHTML = `Summary: ${result.summarize}`;
-
-        // Handle positive points
-        const positiveContainer = document.getElementById("positive-container");
-        const positiveList = document.getElementById("positive-points");
-        positiveList.innerHTML = "";
-
-        if (result.key.positive && result.key.positive.length > 0) {
-          result.key.positive.forEach((point) => {
-            const li = document.createElement("li");
-            li.className = "list-group-item";
-            li.innerHTML = `<i class="fas fa-check-circle text-success mr-2"></i>${point}`;
-            positiveList.appendChild(li);
-          });
-          positiveContainer.style.display = "block";
-        } else {
-          positiveContainer.style.display = "none";
-        }
-
-        // Handle negative points
-        const negativeContainer = document.getElementById("negative-container");
-        const negativeList = document.getElementById("negative-points");
-        negativeList.innerHTML = "";
-
-        if (result.key.negative && result.key.negative.length > 0) {
-          result.key.negative.forEach((point) => {
-            const li = document.createElement("li");
-            li.className = "list-group-item";
-            li.innerHTML = `<i class="fas fa-times-circle text-danger mr-2"></i>${point}`;
-            negativeList.appendChild(li);
-          });
-          negativeContainer.style.display = "block";
-        } else {
-          negativeContainer.style.display = "none";
-        }
-      };
-
-      function getStarRating(score) {
-        let stars = "";
-        for (let i = 0; i < 5; i++) {
-          if (score >= (i + 1) * 1) {
-            stars += '<i class="fas fa-star"></i>'; // Full star
-          } else if (score >= i + 0.5) {
-            stars += '<i class="fas fa-star-half-alt"></i>'; // Half star
-          } else {
-            stars += '<i class="far fa-star"></i>'; // Empty star
-          }
-        }
-        return stars;
-      }
-    </script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
   </body>
 </html>

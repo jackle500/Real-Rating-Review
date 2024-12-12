@@ -1,0 +1,52 @@
+body {
+  background-color: #f8f9fa;
+}
+.container {
+  margin-top: 50px;
+}
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.header h1 {
+  font-size: 2.5rem;
+  color: #343a40;
+}
+.form-group textarea {
+  resize: none;
+}
+.button-submit {
+  background-color: #007bff;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.button-submit:hover {
+  background-color: #0056b3;
+}
+#summary-container {
+  display: none;
+}
+#result {
+  font-size: 1.5rem;
+  color: #343a40;
+}
+.star-rating {
+  font-size: 1.5rem;
+  color: gold;
+}
+.card-title {
+  font-size: 1.25rem;
+}
+.list-group-item {
+  font-size: 1rem;
+}
+footer {
+  text-align: center;
+  margin-top: 50px;
+  padding: 20px;
+  background-color: #343a40;
+  color: white;
+}
