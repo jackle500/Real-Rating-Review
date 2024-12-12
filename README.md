@@ -53,28 +53,26 @@ Real-Rating-Review is an AI-powered web application that analyzes product review
 2. Create an environemnt
 
 # Windows
-python -m venv env
-env\Scripts\activate
+    python -m venv env
+    env\Scripts\activate
 
 # macOS/Linux
-python3 -m venv env
-source env/bin/activate
-
+    python3 -m venv env
+    source env/bin/activate
+    
 3. Install requirement packages:
-
-pip install -r requirements.txt
+      
+        pip install -r requirements.txt
 
 4. Run the app.py
 
-python app.py
+        python app.py
 
    
 ### Access the application:
 
-Open your web browser and go to http://localhost:8080.
-
-### Paste any review into the input field and click analyze
-
+    Open your web browser and go to http://localhost:8080.
+    Paste any review into the input field and click analyze
 # The front-end will give you: 
 
    ### A Summarize of the review, generates a coherent summary that captures the main points
@@ -93,7 +91,7 @@ Open your web browser and go to http://localhost:8080.
       ★★★☆☆ (3 stars) = score 2.5-3.4
       etc.
 
-   ### Key Points Extraction:
+   ### Key Points Extractions
       Each sentence gets its own sentiment score (1-5)
       Positive points: Sentences with scores ≥ 4
       Negative points: Sentences with scores ≤ 2
@@ -104,8 +102,31 @@ Open your web browser and go to http://localhost:8080.
 
 # Project Structure
 app.py: Main Flask application file.
-summarization.py: Contains functions for summarization, paraphrasing, and sentiment analysis.
+summarization.py: Contains functions for summarization, and sentiment analysis.
 templates/: Directory containing HTML templates.
 static/: Directory containing CSS and JavaScript files.
-test_summarization.py: Test cases for the summarization module.
 requirements.txt: Python dependencies.
+
+
+# App analysis
+
+### Strengths
+- Real-time processing
+- Clean, responsive UI
+- Error handling
+
+
+### Limitations
+  
+    - Does not understand sarcasm
+    - No database to store response
+    - No data persistence
+    - Sequential processing
+    - Model size constraints
+    - Subpar performance
+
+### Future improvement
+    - User Authentication and Profiles: Implement user login functionality to allow users to save their analyses and view past reviews.
+    - Database Integration: Store user inputs and analysis results in a database for persistence and data management.
+    - Performance Optimization: Optimize the ML model loading times and inference speeds to enhance user experience
+    - Model Customization: Allow users to select different summarization or sentiment analysis models based on their preferences.
