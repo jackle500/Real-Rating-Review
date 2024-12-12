@@ -1,107 +1,86 @@
-from transformers import BartForConditionalGeneration, BartTokenizer
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lsa import LsaSummarizer
-from sumy.nlp.stemmers import Stemmer
-from sumy.utils import get_stop_words
-
+from transformers import BartForConditionalGeneration, BartTokenizer, pipeline
 from nltk.tokenize import sent_tokenize
-from nltk.sentiment import SentimentIntensityAnalyzer
-import nltk
-from textblob import TextBlob 
 
-def paraphrase_text(text):
+# Load BART model for text summarization
+# We use facebook/bart-large-cnn as it's optimized for summarization tasks
+summarization_model_name = "facebook/bart-large-cnn"
+summarization_tokenizer = BartTokenizer.from_pretrained(summarization_model_name)
+summarization_model = BartForConditionalGeneration.from_pretrained(summarization_model_name)
+
+def summarize_text(text):
+    """
+    Generate a concise summary of the input text using BART.
+    """
+    if not text or not text.strip():
+        return "No text provided for summarization."
+    
     try:
-        # Initialize BART model and tokenizer
-        model_name = "facebook/bart-large-cnn"
-        tokenizer = BartTokenizer.from_pretrained(model_name)
-        model = BartForConditionalGeneration.from_pretrained(model_name)
-        
-        # Tokenize and generate paraphrase
-        inputs = tokenizer(text, max_length=1024, truncation=True, return_tensors="pt")
-        summary_ids = model.generate(
-            inputs["input_ids"],
-            num_beams=4,
-            length_penalty=2.0,
-            max_length=142,
-            min_length=56,
-            no_repeat_ngram_size=3
+        # Tokenize and encode the input text
+        inputs = summarization_tokenizer.batch_encode_plus(
+            [text],
+            return_tensors='pt',
+            max_length=1024,  # BART's max input length
+            truncation=True
         )
         
-        paraphrased = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-        return paraphrased
-
-    except Exception as e:
-        print(f"Error in paraphrasing: {e}")
-        return text
-
-def summarize_text(review_text, percent=0.3):
-    try:
-        # Create parser
-        parser = PlaintextParser.from_string(review_text, Tokenizer("english"))
+        if not inputs or 'input_ids' not in inputs:
+            raise ValueError("Failed to encode input text")
+            
+        # Generate summary with beam search for better quality
+        summary_ids = summarization_model.generate(
+            inputs['input_ids'],
+            num_beams=4,  # Use beam search with 4 beams
+            max_length=400,  # Keep summary reasonably sized
+            early_stopping=True
+        )
         
-        # Initialize summarizer
-        stemmer = Stemmer("english")
-        summarizer = LsaSummarizer(stemmer)
-        summarizer.stop_words = get_stop_words("english")
+        summary = summarization_tokenizer.decode(
+            summary_ids[0],
+            skip_special_tokens=True
+        )
         
-        # Calculate number of sentences based on input length
-        num_sentences = max(1, len(list(parser.document.sentences)) * percent)
-        
-        # Generate summary
-        summary = summarizer(parser.document, int(num_sentences))
-        return " ".join([str(sentence) for sentence in summary])
-        
-    except Exception as e:
-        print(f"Error in summarization: {e}")
-        return review_text[:200] + "..."
-
-def summarize_and_paraphrase(review_text, should_paraphrase=True):
-    """
-    Summarizes and optionally paraphrases the input text
-    """
-    try:
-        # First summarize
-        summary = summarize_text(review_text)
-        
-        # Then paraphrase if requested
-        if should_paraphrase:
-            return paraphrase_text(summary)
+        if not summary:
+            raise ValueError("Generated summary is empty")
+            
         return summary
         
+    except ValueError as ve:
+        print(f"ValueError in summarization: {ve}")
+        return "Error: Unable to generate summary."
     except Exception as e:
-        print(f"Error in summarize_and_paraphrase: {e}")
-        return review_text[:200] + "..."
+        print(f"Unexpected error in summarization: {e}")
+        return text[:200] + "..."  # Fallback to text truncation
+
+# Initialize BERT model for sentiment analysis
+sentiment_pipeline = pipeline('sentiment-analysis', model='nlptown/bert-base-multilingual-uncased-sentiment')
 
 def analyze_sentiment_points(text):
+    """
+    Break down text into sentences and analyze sentiment of each one.
+    Returns top 5 positive and negative points based on sentiment scores.
+    """
     try:
-        # Initialize sentiment analyzer
-        sia = SentimentIntensityAnalyzer()
-        
-        # Split text into sentences
+        # Split text into individual sentences for analysis
         sentences = sent_tokenize(text)
-        
         positive_points = []
         negative_points = []
         
+        # Analyze each sentence and categorize based on rating
         for sentence in sentences:
-            # Get sentiment scores
-            sentiment = sia.polarity_scores(sentence)
+            result = sentiment_pipeline(sentence)[0]
+            label = result['label']
+            rating = int(label.split()[0])  # Extract numerical rating (1-5)
             
-            # Clean and simplify the sentence using TextBlob
-            blob = TextBlob(sentence)
-            
-            # Categorize based on compound score
-            if sentiment['compound'] > 0.2:
-                positive_points.append(str(blob))
-            elif sentiment['compound'] < -0.2:
-                negative_points.append(str(blob))
-        
+            # Categorize as positive (4-5) or negative (1-2)
+            if rating >= 4:
+                positive_points.append(sentence)
+            elif rating <= 2:
+                negative_points.append(sentence)
+                
         return {
-            'positive': positive_points[:5],  # Limit to top 5 points
+            'positive': positive_points[:5],  # Return top 5 points
             'negative': negative_points[:5]
         }
-        
     except Exception as e:
         print(f"Error in sentiment analysis: {e}")
         return {'positive': [], 'negative': []}
